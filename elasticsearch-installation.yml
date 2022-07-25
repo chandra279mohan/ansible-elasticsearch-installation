@@ -6,18 +6,19 @@
     es_http_port: 9200
     es_version: 7.16.2
     es_destination: /opt/ansible
+    application: elasticsearch
     
 
 
   tasks:
 
-    - name: Download Elasticsearch RPM package {{ es_version }}
+    - name: Download {{ application }} RPM package {{ es_version }}
       ansible.builtin.get_url:
         url: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ es_version }}-x86_64.rpm
         dest: {{ es_destination }}
         #checksum: "sha512:https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ es_version }}-x86_64.rpm.sha512"
         
-    - name: Install Elasticsearch
+    - name: Install ELasticsearch
       ansible.builtin.yum:
         name: /{{ es_destination }}/elasticsearch-{{ es_version }}-x86_64.rpm
         state: present
@@ -28,14 +29,14 @@
         
     - name: Enable service elasticsearch and ensure it is not masked
       ansible.builtin.systemd:
-        name: elasticsearch
+        name: {{ application }}
         enabled: yes
         masked: no
 
 
     - name: Start service Elasticsearch, if not started
       ansible.builtin.service:
-        name: elasticsearch
+        name: {{ application }}
         state: started
 
     - name: Wait for cluster health to return to green

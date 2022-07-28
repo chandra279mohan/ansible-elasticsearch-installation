@@ -7,6 +7,10 @@
     es_version: 7.16.2
     es_destination: /opt/ansible
     application: elasticsearch
+    plugin : mapper-size-7.16.2
+    plugin_url: https://artifacts.elastic.co/downloads/elasticsearch-plugins/mapper-size/mapper-size-7.16.2.zip
+    plugin_destination: /usr/share/elasticsearch
+    plugin_package: mapper-size-7.16.2.zip
     
 
 
@@ -22,6 +26,14 @@
       ansible.builtin.yum:
         name: /{{ es_destination }}/elasticsearch-{{ es_version }}-x86_64.rpm
         state: present
+        
+    - name: download the {{ plugin }} plugin 
+      ansible.builtin.get_url:
+        url: {{ plugin_url }}
+        dest: {{ plugin_destination }}
+
+    - name: Install {{ plugin }} plugin 
+      command: /usr/share/elasticsearch/bin/elasticsearch-plugin install file:{{ plugin_destination }}/{{ plugin_package }}
         
     - name: Just force systemd to reload
       ansible.builtin.systemd:

@@ -5,7 +5,7 @@
   vars:
     es_http_port: 9200
     es_version: 7.16.2
-    es_destination: /opt/ansible
+    es_destination: /opt
     application: elasticsearch
     plugin : mapper-size-7.16.2
     plugin_url: https://artifacts.elastic.co/downloads/elasticsearch-plugins/mapper-size/mapper-size-7.16.2.zip

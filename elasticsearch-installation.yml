@@ -1,5 +1,6 @@
+
 - name: Elasticsearch Installation
-  hosts: elastic
+  hosts: localhost
   become: true
 
   vars:
@@ -8,57 +9,78 @@
     es_version: 7.16.2
     es_destination: /opt
     application: elasticsearch
-    plugin_list : mapper-size
+    plugin_list : [ mapper-size ]
     elastic_home: /usr/share/elasticsearch
     plugin_version: 7.16.2
 
-    
+
 
 
   tasks:
 
     - name: Download {{ application }} RPM package {{ es_version }}
       ansible.builtin.get_url:
-        url: {{ es_url}}
-        dest: {{ es_destination }}
+        url: "{{ es_url}}"
+        dest: "{{ es_destination }}"
         #checksum: "sha512:https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ es_version }}-x86_64.rpm.sha512"
-        
+
     - name: Install ELasticsearch
       ansible.builtin.yum:
-        name: /{{ es_destination }}/elasticsearch-{{ es_version }}-x86_64.rpm
+        name: "{{ es_destination }}/elasticsearch-{{ es_version }}-x86_64.rpm"
         state: present
-        
-    - name: download elasticsearch plugin 
+
+    - name: download elasticsearch plugin
       ansible.builtin.get_url:
         url: https://artifacts.elastic.co/downloads/elasticsearch-plugins/{{ item }}/{{ item }}-{{ plugin_version }}.zip
-        dest: {{ elastic_home }}
+        dest: "{{ elastic_home }}"
       loop: "{{ plugin_list }}"
 
-    - name: Install elasticsearch plugin 
-      command: {{ elastic_home }}/bin/elasticsearch-plugin install file:{{ elastic_home }}/{{ item }}-{{ plugin_version }}.zip
+    - name: Install elasticsearch plugin
+      command: "{{ elastic_home }}/bin/elasticsearch-plugin install file:{{ elastic_home }}/{{ item }}-{{ plugin_version }}.zip"
+      ignore_errors: yes
       loop: "{{ plugin_list }}"
-        
+
     - name: Just force systemd to reload
       ansible.builtin.systemd:
         daemon_reload: yes
-        
+
     - name: Enable service elasticsearch and ensure it is not masked
       ansible.builtin.systemd:
-        name: {{ application }}
+        name: "{{ application }}"
         enabled: yes
         masked: no
 
 
     - name: Start service Elasticsearch, if not started
       ansible.builtin.service:
-        name: {{ application }}
+        name: "{{ application }}"
         state: started
 
     - name: Wait for cluster health to return to green
       ansible.builtin.uri:
         url: http://localhost:{{ es_http_port }}/_cluster/health
-        method: GET
+        #method: GET
+        validate_certs: no
+        return_content: yes
+        body_format: json
       register: response
-      until: "response.json.status == 'green'"
       retries: 100
       delay: 10
+      tags:
+        - es_health
+
+    - name: health es
+      debug:
+        var: response
+      tags:
+        - es_health
+
+
+#     - name: Wait for cluster health to return to green
+#       ansible.builtin.uri:
+#         url: http://localhost:{{ es_http_port }}/_cluster/health
+#         method: GET
+#       register: response
+#       until: "response.json.status == 'green'"
+#       retries: 100
+#       delay: 10

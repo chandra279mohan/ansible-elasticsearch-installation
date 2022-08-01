@@ -24,10 +24,13 @@
         dest: "{{ es_destination }}"
         #checksum: "sha512:https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ es_version }}-x86_64.rpm.sha512"
 
+#     - name: Install ELasticsearch
+#       ansible.builtin.yum:
+#         name: "{{ es_destination }}/elasticsearch-{{ es_version }}-x86_64.rpm"
+#         state: present
+
     - name: Install ELasticsearch
-      ansible.builtin.yum:
-        name: "{{ es_destination }}/elasticsearch-{{ es_version }}-x86_64.rpm"
-        state: present
+      ansible.builtin.shell: rpm --install elasticsearch-{{ es_version }}-x86_64.rpm
 
     - name: download elasticsearch plugin
       ansible.builtin.get_url:

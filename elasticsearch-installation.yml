@@ -1,6 +1,5 @@
-
 - name: Elasticsearch Installation
-  hosts: localhost
+  hosts: elastic
   become: true
 
   vars:
@@ -24,13 +23,13 @@
         dest: "{{ es_destination }}"
         #checksum: "sha512:https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ es_version }}-x86_64.rpm.sha512"
 
-#     - name: Install ELasticsearch
-#       ansible.builtin.yum:
-#         name: "{{ es_destination }}/elasticsearch-{{ es_version }}-x86_64.rpm"
-#         state: present
-
     - name: Install ELasticsearch
-      ansible.builtin.shell: rpm --install elasticsearch-{{ es_version }}-x86_64.rpm
+      ansible.builtin.yum:
+        name: "{{ es_destination }}/elasticsearch-{{ es_version }}-x86_64.rpm"
+        state: present
+
+#    - name: Install ELasticsearch
+#      ansible.builtin.shell: rpm --install elasticsearch-{{ es_version }}-x86_64.rpm
 
     - name: download elasticsearch plugin
       ansible.builtin.get_url:
@@ -53,37 +52,25 @@
         enabled: yes
         masked: no
 
-
     - name: Start service Elasticsearch, if not started
       ansible.builtin.service:
         name: "{{ application }}"
         state: started
 
+  
     - name: Wait for cluster health to return to green
-      ansible.builtin.uri:
-        url: http://localhost:{{ es_http_port }}/_cluster/health
-        #method: GET
-        validate_certs: no
-        return_content: yes
-        body_format: json
-      register: response
+      command:
+        cmd: curl -XGET http://localhost:9200/_cluster/health?pretty
+      register: result
+      #until: result.json.status == "green"
       retries: 100
       delay: 10
       tags:
         - es_health
+     
 
     - name: health es
       debug:
-        var: response
+        var: result
       tags:
         - es_health
-
-
-#     - name: Wait for cluster health to return to green
-#       ansible.builtin.uri:
-#         url: http://localhost:{{ es_http_port }}/_cluster/health
-#         method: GET
-#       register: response
-#       until: "response.json.status == 'green'"
-#       retries: 100
-#       delay: 10
